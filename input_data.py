@@ -1,7 +1,7 @@
 import scipy.io as sio
 #import h5py
 
-data = sio.loadmat('./data/test_64_32_source2114_ellipsefixed_rand.mat')
+data = sio.loadmat('./data/test_64_32_source2114_ellipse_value_7.mat')
 #data = h5py.File('./data/test_64_circle_1e4.mat')
 Sig_set_reshape = data["Sig_set_reshape"]
 N_test = data["N_test"]
