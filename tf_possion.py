@@ -73,9 +73,15 @@ def model(is_training):
     with tf.name_scope('eval_error'):
         with tf.name_scope('rmse') as scope:
             rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(tempy - y_predict),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
+#            grad_x = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(tf.gradients(y_predict,y_predict)),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2])))) 
+            y_predict_trans = tf.transpose(y_predict)
+#            grad_y = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(tf.gradients(y_predict_trans,y_predict_trans)),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2])))) 
+#            f_obj = 1 * rmse + 0 *grad_x + 0 * grad_y
+            f_obj = rmse
+ 
         with tf.name_scope('db') as scope:
             #db = 20*tf.log(tf.add(tf.div(tf.abs(tempy-y_predict),tf.abs(tempy)),1e-10),10)
             db = 20*tf.div(tf.log(tf.add(tf.div(tf.abs(tf.pow(ten,tempy)-tf.pow(ten,y_predict)),tf.abs(tf.pow(ten,tempy))),1e-10)),tf.log(10.0))
             mean_db = tf.reduce_mean(db)
     db_summary = tf.summary.histogram('db',db)
-    return y_predict,rmse,mean_db
+    return y_predict,rmse,mean_db,f_obj
