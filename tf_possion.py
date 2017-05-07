@@ -11,7 +11,7 @@ with tf.name_scope('input_data') as scope:
     tempx=x
     tempy=tf.abs(tf.div(tf.log(y_actual),tf.log(10.0)))
 
-def model(is_training):
+def model():
     #set up the network
     '''layer1'''
     ten =10 * tf.ones([40,32,32,1])
@@ -72,16 +72,33 @@ def model(is_training):
 
     with tf.name_scope('eval_error'):
         with tf.name_scope('rmse') as scope:
+            #grad_x_temp,grad_y_temp=grad(y_predict)
+
+            trans_x = tf.transpose(y_predict,[2,1,0,3])
+            trans_y = tf.transpose(y_predict,[1,0,2,3])
+
+            pack_x = []
+            pack_y = []
+            pack_x = tf.stack([trans_x[1] - trans_x[0]])
+            pack_y = tf.stack([trans_y[1] - trans_y[0]])
+
+            for i in range(1,31):
+                pack_x = tf.concat( axis = 0 , values = [ pack_x , [ 0.5 * (trans_x[i+1] - trans_x[i-1]) ] ] )
+                pack_y = tf.concat( axis = 0 , values = [ pack_y , [ 0.5 * (trans_y[i+1] - trans_y[i-1]) ] ] )
+
+            pack_x = tf.concat( axis = 0 , values = [ pack_x , [ trans_x [ 31 ] - trans_x [ 30 ] ] ] )
+            pack_y = tf.concat( axis = 0 , values = [ pack_y , [ trans_y [ 31 ] - trans_y [ 30 ] ] ] )
+            gradx = tf.transpose(pack_x , [2,1,0,3])
+            grady = tf.transpose(pack_y , [1,0,2,3])
+
             rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(tempy - y_predict),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
-#            grad_x = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(tf.gradients(y_predict,y_predict)),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2])))) 
-            y_predict_trans = tf.transpose(y_predict)
-#            grad_y = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(tf.gradients(y_predict_trans,y_predict_trans)),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2])))) 
-#            f_obj = 1 * rmse + 0 *grad_x + 0 * grad_y
-            f_obj = rmse
+            grad_x_rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(gradx),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
+            grad_y_rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(grady),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
+            f_obj = 0.9* rmse+0.1* (tf.sqrt(tf.square(grad_x_rmse) + tf.square(grad_y_rmse)))
  
         with tf.name_scope('db') as scope:
             #db = 20*tf.log(tf.add(tf.div(tf.abs(tempy-y_predict),tf.abs(tempy)),1e-10),10)
             db = 20*tf.div(tf.log(tf.add(tf.div(tf.abs(tf.pow(ten,tempy)-tf.pow(ten,y_predict)),tf.abs(tf.pow(ten,tempy))),1e-10)),tf.log(10.0))
             mean_db = tf.reduce_mean(db)
     db_summary = tf.summary.histogram('db',db)
-    return y_predict,rmse,mean_db,f_obj
+    return y_predict,rmse,grad_x_rmse,grad_y_rmse,mean_db,f_obj

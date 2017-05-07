@@ -12,6 +12,10 @@ def bias_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial)
 
+def zeros_variable(shape):
+    initial = tf.zeros(shape)
+    return tf.Variable(initial)
+
 #function to set up conv layer
 def conv2d_S(x,W):
     return tf.nn.conv2d(x,W,strides=[1,1,1,1],padding='SAME')
@@ -42,3 +46,33 @@ def batch_norm(inputs, is_training, decay = 0.999):
     else:
         return tf.nn.batch_normalization(inputs,pop_mean, pop_var, beta, scale, 0.001)
 
+def grad(x):
+###
+# x is y_predict by batch *32*32*1
+###
+
+    trans_x = tf.transpose(x,[2,1,0,3])
+    trans_y = tf.transpose(x,[1,0,2,3])
+#    gradx = zeros_variable([32,32,40,1])
+    gradx = zeros_variable([32,32,40,1]) 
+    grady = zeros_variable([32,40,32,1])
+    sess=tf.Session()
+#    sess.run(tf.global_variables_initializer())
+
+    op=gradx[0].assign(trans_x[1] - trans_x[0])
+    tf_train.sess.run(op)
+    op=gradx[31].assign(trans_x[31] - trans_x[30])
+    sess.run(op)
+    op=grady[0].assign(trans_y[1] - trans_y[0])
+    sess.run(op)
+    op=grady[31].assign(trans_y[31] - trans_y[30])
+    sess.run(op)
+    for i in range(1,31):
+        op=gradx[i].assign(0.5 * (trans_x[i+1] - trans_x[i-1]))
+        sess.run(op)
+        op=grady[i].assign(0.5 * (trans_y[i+1] - trans_y[i-1]))
+        sess.run(op)
+
+    gradx = tf.transpose(gradx,[2,1,0,3])
+    grady = tf.transpose(grady,[1,0,2,3])
+    return gradx,grady
