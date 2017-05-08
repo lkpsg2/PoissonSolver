@@ -91,11 +91,14 @@ def model():
             gradx = tf.transpose(pack_x , [2,1,0,3])
             grady = tf.transpose(pack_y , [1,0,2,3])
 
-            rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(tempy - y_predict),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
-            grad_x_rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(gradx),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
-            grad_y_rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(grady),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
-            f_obj = 0.9* rmse+0.1* (tf.sqrt(tf.square(grad_x_rmse) + tf.square(grad_y_rmse)))
- 
+#            rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(tempy - y_predict),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
+            rmse = tf.reduce_mean(tf.reduce_mean(tf.div(tf.square(tempy - y_predict),tf.square(tempy)),[1,2]))
+#            grad_x_rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(gradx),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
+            grad_x_rmse = tf.reduce_mean(tf.reduce_mean(tf.div(tf.square(gradx),tf.square(tempy)),[1,2]))
+#            grad_y_rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(grady),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
+            grad_y_rmse = tf.reduce_mean(tf.reduce_mean(tf.div(tf.square(grady),tf.square(tempy)),[1,2]))
+#            f_obj = 1 * rmse+0* (tf.sqrt(tf.square(grad_x_rmse) + tf.square(grad_y_rmse)))
+            f_obj = rmse + 0.1 *(grad_x_rmse + grad_y_rmse)
         with tf.name_scope('db') as scope:
             #db = 20*tf.log(tf.add(tf.div(tf.abs(tempy-y_predict),tf.abs(tempy)),1e-10),10)
             db = 20*tf.div(tf.log(tf.add(tf.div(tf.abs(tf.pow(ten,tempy)-tf.pow(ten,y_predict)),tf.abs(tf.pow(ten,tempy))),1e-10)),tf.log(10.0))

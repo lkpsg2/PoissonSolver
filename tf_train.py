@@ -36,11 +36,7 @@ batch = 40
 test_size = x_test.shape[0]
 
 train_index = list(range(x_train.shape[0]))
-random.shuffle(train_index)
-x_train,y_train = x_train[train_index],y_train[train_index]
 test_index = list(range(x_test.shape[0]))
-random.shuffle(test_index)
-x_test,y_test = x_test[test_index],y_test[test_index]
 for i in range(epochs):
 
     random.shuffle(train_index)
@@ -83,7 +79,7 @@ for i in range(epochs):
     meandb = temp_db/(test_size/batch)
     fobj = temp_fobj/(test_size/batch)
     gradx_result = temp_grad_x/(test_size/batch)
-    if i==1:
+    if i==750:
         y_print = y_predict.eval(feed_dict={tf_possion.x:x_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
 
         #result = tf.scalar_summary('y_result',y_print)
