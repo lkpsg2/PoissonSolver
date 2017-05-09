@@ -4,7 +4,7 @@ import numpy as np
 from func import *
 
 with tf.name_scope('input_data') as scope:
-    x = tf.placeholder("float",shape=[None,66,66,1],name='input')
+    x = tf.placeholder("float",shape=[None,64,64,1],name='input')
     y_actual = tf.placeholder("float",shape=[None,32,32,1],name='results')
     keep_prob = tf.placeholder("float",name='drop_out')
 
@@ -48,7 +48,7 @@ def model():
         l4 = tf.nn.relu(h_conv4)
 
     with tf.name_scope('layer5') as scope:
-        W_conv5 = weight_variable([5,5,64,64],name='w_conv5')
+        W_conv5 = weight_variable([3,3,64,64],name='w_conv5')
         b_conv5 = bias_variable([64])
         h_conv5 = conv2d_V(l4,W_conv5) + b_conv5
         l5 = tf.nn.relu(h_conv5)
@@ -98,7 +98,7 @@ def model():
 #            grad_y_rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(grady),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
             grad_y_rmse = tf.reduce_mean(tf.reduce_mean(tf.div(tf.square(grady),tf.square(tempy)),[1,2]))
 #            f_obj = 1 * rmse+0* (tf.sqrt(tf.square(grad_x_rmse) + tf.square(grad_y_rmse)))
-            f_obj = rmse + 0.1 *(grad_x_rmse + grad_y_rmse)
+            f_obj = rmse + 0.5 *(grad_x_rmse + grad_y_rmse)
         with tf.name_scope('db') as scope:
             #db = 20*tf.log(tf.add(tf.div(tf.abs(tempy-y_predict),tf.abs(tempy)),1e-10),10)
             db = 20*tf.div(tf.log(tf.add(tf.div(tf.abs(tf.pow(ten,tempy)-tf.pow(ten,y_predict)),tf.abs(tf.pow(ten,tempy))),1e-10)),tf.log(10.0))
