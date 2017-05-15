@@ -7,9 +7,12 @@ import matplotlib.pyplot as plt
 import input_data
 import tf_possion
 
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+
 global_step = tf.Variable(0, trainable=False)
 starter_learning_rate = 0.0001
-learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,40000, 0.8, staircase=True)
+learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,40000, 1, staircase=True)
 
 sess = tf.InteractiveSession(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False))
 #with tf.device('/gpu:2'):
@@ -25,8 +28,8 @@ summary_writer = tf.summary.FileWriter('./logs', sess.graph)
 
 sess.run(tf.global_variables_initializer())
 #sess.run(tf_possion.op)
-x_train,y_train = input_data.input_data(test=False)
-x_test,y_test = input_data.input_data(test=True)
+x_train,d_train,y_train = input_data.input_data(test=False)
+x_test,d_test,y_test = input_data.input_data(test=True)
 
 epochs = 10000
 train_size = x_train.shape[0]
@@ -41,18 +44,18 @@ for i in range(epochs):
 
     random.shuffle(train_index)
     random.shuffle(test_index)
-    x_train,y_train = x_train[train_index],y_train[train_index]
-    x_test,y_test = x_test[test_index],y_test[test_index]
+    x_train,d_train,y_train = x_train[train_index],d_train[train_index],y_train[train_index]
+    x_test,d_test,y_test = x_test[test_index],d_test[test_index],y_test[test_index]
 
     for j in range(0,train_size,batch):
-        train_step.run(feed_dict={tf_possion.x:x_train[j:j+batch],tf_possion.y_actual:y_train[j:j+batch],tf_possion.keep_prob:0.5})
+        train_step.run(feed_dict={tf_possion.x:x_train[j:j+batch],tf_possion.d:d_train[j:j+batch],tf_possion.y_actual:y_train[j:j+batch],tf_possion.keep_prob:0.5})
     
 
     temp = 0
     train_loss=0
 #        if (i%30)==0:
     for j in range(0,train_size,batch):
-        train_loss = rmse.eval(feed_dict={tf_possion.x:x_train[j:j+batch],tf_possion.y_actual:y_train[j:j+batch],tf_possion.keep_prob: 1.0})
+        train_loss = rmse.eval(feed_dict={tf_possion.x:x_train[j:j+batch],tf_possion.d:d_train[j:j+batch],tf_possion.y_actual:y_train[j:j+batch],tf_possion.keep_prob: 1.0})
         temp = temp + train_loss
     train_loss = temp/(train_size/batch)
 
@@ -66,10 +69,10 @@ for i in range(epochs):
     loss = 0
 #        if (i%30)==0:
     for j in range(0,test_size,batch):
-        loss = rmse.eval(feed_dict={tf_possion.x:x_test[j:j+batch],tf_possion.y_actual:y_test[j:j+batch],tf_possion.keep_prob: 1.0})
-        meandb = mean_db.eval(feed_dict={tf_possion.x:x_test[j:j+batch],tf_possion.y_actual:y_test[j:j+batch],tf_possion.keep_prob: 1.0})
-        fobj = f_obj.eval(feed_dict={tf_possion.x:x_test[j:j+batch],tf_possion.y_actual:y_test[j:j+batch],tf_possion.keep_prob: 1.0})
-        gradx_result = grad_x_rmse.eval(feed_dict={tf_possion.x:x_test[j:j+batch],tf_possion.y_actual:y_test[j:j+batch],tf_possion.keep_prob: 1.0})
+        loss = rmse.eval(feed_dict={tf_possion.x:x_test[j:j+batch],tf_possion.d:d_test[j:j+batch],tf_possion.y_actual:y_test[j:j+batch],tf_possion.keep_prob: 1.0})
+        meandb = mean_db.eval(feed_dict={tf_possion.x:x_test[j:j+batch],tf_possion.d:d_test[j:j+batch],tf_possion.y_actual:y_test[j:j+batch],tf_possion.keep_prob: 1.0})
+        fobj = f_obj.eval(feed_dict={tf_possion.x:x_test[j:j+batch],tf_possion.d:d_test[j:j+batch],tf_possion.y_actual:y_test[j:j+batch],tf_possion.keep_prob: 1.0})
+        gradx_result = grad_x_rmse.eval(feed_dict={tf_possion.x:x_test[j:j+batch],tf_possion.d:d_test[j:j+batch],tf_possion.y_actual:y_test[j:j+batch],tf_possion.keep_prob: 1.0})
         temp_loss = temp_loss+loss
         temp_db = temp_db+meandb
         temp_fobj = temp_fobj+fobj
@@ -80,12 +83,12 @@ for i in range(epochs):
     fobj = temp_fobj/(test_size/batch)
     gradx_result = temp_grad_x/(test_size/batch)
     if i==750:
-        y_print = y_predict.eval(feed_dict={tf_possion.x:x_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
+        y_print = y_predict.eval(feed_dict={tf_possion.x:x_test[0:batch],tf_possion.d:d_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
 
         #result = tf.scalar_summary('y_result',y_print)
         #print 'y_print {0}'.format(y_print)
         sio.savemat('result.mat',{'aa':y_test[0:batch],'aa_test':y_print})
 
-    summary_str = sess.run(merged_summary_op,feed_dict={tf_possion.x:x_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
+    summary_str = sess.run(merged_summary_op,feed_dict={tf_possion.x:x_test[0:batch],tf_possion.d:d_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
     summary_writer.add_summary(summary_str,j)
     print ('epoch {0} done! train_loss:{1} test_loss:{2} grad_x:{3} f_obj:{4} db:{5} global_step:{6} learning rate:{7}'.format(i,train_loss, loss,gradx_result,fobj,meandb,global_step.eval(),learning_rate.eval()))

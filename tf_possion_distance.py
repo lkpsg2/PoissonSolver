@@ -9,7 +9,8 @@ with tf.name_scope('input_data') as scope:
     y_actual = tf.placeholder("float",shape=[None,32,32,1],name='results')
     keep_prob = tf.placeholder("float",name='drop_out')
 
-    log10_y=tf.abs(tf.div(tf.log(y_actual),tf.log(10.0)))
+    tempx=x
+    tempy=tf.abs(tf.div(tf.log(y_actual),tf.log(10.0)))
 
 def model():
     #set up the network
@@ -19,16 +20,16 @@ def model():
     with tf.name_scope('layer_d1') as scope:
         W_conv_d1 = weight_variable([3,3,1,8],name='w_conv_d1')
         b_conv_d1 = bias_variable([8])
-        h_conv_d1 = conv2d_S(d,W_conv_d1) + b_conv_d1
+        h_conv_d1 = conv2d_V(d,W_conv_d1) + b_conv_d1
         l_d1 = tf.nn.relu(h_conv_d1)
 
     with tf.name_scope('layer_d2') as scope:
         W_conv_d2 = weight_variable([3,3,8,1],name='w_conv_d2')
         b_conv_d2 = bias_variable([1])
-        h_conv_d2 = conv2d_S(l_d1,W_conv_d2) + b_conv_d2
+        h_conv_d2 = conv2d_V(d,W_conv_d2) + b_conv_d2
         l_d2 = tf.nn.relu(h_conv_d2)
 
-    tempx=tf.concat(axis=3,values=[l_d2,x])
+    tempx=tf.concat(axis=3,values=[l_d2,tempx])
 
     with tf.name_scope('layer1') as scope:
         W_conv1 = weight_variable([11,11,2,16],name='w_conv1')
@@ -44,6 +45,8 @@ def model():
         h_conv2 = conv2d_V(l1,W_conv2) + b_conv2
         l2 = tf.nn.relu(h_conv2)
 
+#        w1 = weight_variable([2,2,8,8])
+#        y_dconv = tf.nn.conv2d_transpose(l_pool2,w1,[40,32,32,8],[1,2,2,1],'VALID')
 
     '''layer3'''
     with tf.name_scope('layer3') as scope:
@@ -82,9 +85,6 @@ def model():
         b_conv8 = bias_variable([1])
         y_predict = conv2d_V(l7,W_conv8) + b_conv8
 
-#        w1 = weight_variable([2,2,8,8])
-#        y_dconv = tf.nn.conv2d_transpose(l_pool2,w1,[40,32,32,8],[1,2,2,1],'VALID')
-
     with tf.name_scope('eval_error'):
         with tf.name_scope('rmse') as scope:
             #grad_x_temp,grad_y_temp=grad(y_predict)
@@ -107,16 +107,16 @@ def model():
             grady = tf.transpose(pack_y , [1,0,2,3])
 
 #            rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(tempy - y_predict),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
-            rmse = tf.reduce_mean(tf.reduce_mean(tf.div(tf.square(log10_y - y_predict),tf.square(log10_y)),[1,2]))
+            rmse = tf.reduce_mean(tf.reduce_mean(tf.div(tf.square(tempy - y_predict),tf.square(tempy)),[1,2]))
 #            grad_x_rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(gradx),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
-            grad_x_rmse = tf.reduce_mean(tf.reduce_mean(tf.div(tf.square(gradx),tf.square(log10_y)),[1,2]))
+            grad_x_rmse = tf.reduce_mean(tf.reduce_mean(tf.div(tf.square(gradx),tf.square(tempy)),[1,2]))
 #            grad_y_rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(grady),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
-            grad_y_rmse = tf.reduce_mean(tf.reduce_mean(tf.div(tf.square(grady),tf.square(log10_y)),[1,2]))
+            grad_y_rmse = tf.reduce_mean(tf.reduce_mean(tf.div(tf.square(grady),tf.square(tempy)),[1,2]))
 #            f_obj = 1 * rmse+0* (tf.sqrt(tf.square(grad_x_rmse) + tf.square(grad_y_rmse)))
             f_obj = rmse + 0.5 *(grad_x_rmse + grad_y_rmse)
         with tf.name_scope('db') as scope:
             #db = 20*tf.log(tf.add(tf.div(tf.abs(tempy-y_predict),tf.abs(tempy)),1e-10),10)
-            db = 20*tf.div(tf.log(tf.add(tf.div(tf.abs(tf.pow(ten,log10_y)-tf.pow(ten,y_predict)),tf.abs(tf.pow(ten,log10_y))),1e-10)),tf.log(10.0))
+            db = 20*tf.div(tf.log(tf.add(tf.div(tf.abs(tf.pow(ten,tempy)-tf.pow(ten,y_predict)),tf.abs(tf.pow(ten,tempy))),1e-10)),tf.log(10.0))
             mean_db = tf.reduce_mean(db)
     db_summary = tf.summary.histogram('db',db)
     return y_predict,rmse,grad_x_rmse,grad_y_rmse,mean_db,f_obj
