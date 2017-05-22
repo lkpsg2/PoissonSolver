@@ -8,15 +8,15 @@ import input_data
 import tf_possion
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "5"
 
 global_step = tf.Variable(0, trainable=False)
 starter_learning_rate = 0.0001
-learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,40000, 1, staircase=True)
+learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,100000, 0.8, staircase=True)
 
 sess = tf.InteractiveSession(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False))
 #with tf.device('/gpu:2'):
-y_predict,rmse,grad_x_rmse,grad_y_rmse,mean_db,f_obj = tf_possion.model()
+y_predict,rmse,grad_x_rmse,grad_y_rmse,mean_db,f_obj,ld2 = tf_possion.model()
 #y_predict_test,rmse_test,mean_db_test = tf_possion.model(is_training=False)
 #with tf.device('/gpu:1'):
 train_step = tf.train.AdamOptimizer(learning_rate).minimize(f_obj,global_step=global_step)
@@ -31,7 +31,7 @@ sess.run(tf.global_variables_initializer())
 x_train,d_train,y_train = input_data.input_data(test=False)
 x_test,d_test,y_test = input_data.input_data(test=True)
 
-epochs = 10000
+epochs = 3000
 train_size = x_train.shape[0]
 #print(train_size)
 global batch
@@ -84,11 +84,22 @@ for i in range(epochs):
     gradx_result = temp_grad_x/(test_size/batch)
     if i==750:
         y_print = y_predict.eval(feed_dict={tf_possion.x:x_test[0:batch],tf_possion.d:d_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
-
+        y_ld = ld2.eval(feed_dict={tf_possion.x:x_test[0:batch],tf_possion.d:d_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
         #result = tf.scalar_summary('y_result',y_print)
         #print 'y_print {0}'.format(y_print)
-        sio.savemat('result.mat',{'aa':y_test[0:batch],'aa_test':y_print})
-
+        sio.savemat('result750.mat',{'aa':y_test[0:batch],'aa_test':y_print,'ld':y_ld})
+    if i==1500:
+        y_print = y_predict.eval(feed_dict={tf_possion.x:x_test[0:batch],tf_possion.d:d_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
+        y_ld = ld2.eval(feed_dict={tf_possion.x:x_test[0:batch],tf_possion.d:d_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
+        #result = tf.scalar_summary('y_result',y_print)
+        #print 'y_print {0}'.format(y_print)
+        sio.savemat('result1500.mat',{'aa':y_test[0:batch],'aa_test':y_print,'ld':y_ld})
+    if i==2000:
+        y_print = y_predict.eval(feed_dict={tf_possion.x:x_test[0:batch],tf_possion.d:d_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
+        y_ld = ld2.eval(feed_dict={tf_possion.x:x_test[0:batch],tf_possion.d:d_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
+        #result = tf.scalar_summary('y_result',y_print)
+        #print 'y_print {0}'.format(y_print)
+        sio.savemat('result2000.mat',{'aa':y_test[0:batch],'aa_test':y_print,'ld':y_ld})
     summary_str = sess.run(merged_summary_op,feed_dict={tf_possion.x:x_test[0:batch],tf_possion.d:d_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
     summary_writer.add_summary(summary_str,j)
     print ('epoch {0} done! train_loss:{1} test_loss:{2} grad_x:{3} f_obj:{4} db:{5} global_step:{6} learning rate:{7}'.format(i,train_loss, loss,gradx_result,fobj,meandb,global_step.eval(),learning_rate.eval()))

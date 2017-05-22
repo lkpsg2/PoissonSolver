@@ -28,7 +28,7 @@ def model():
         h_conv_d2 = conv2d_S(l_d1,W_conv_d2) + b_conv_d2
         l_d2 = tf.nn.relu(h_conv_d2)
 
-    tempx=tf.concat(axis=3,values=[l_d2,x])
+    tempx=tf.concat(axis=3,values=[d,x])
 
     with tf.name_scope('layer1') as scope:
         W_conv1 = weight_variable([11,11,2,16],name='w_conv1')
@@ -37,7 +37,7 @@ def model():
         l1 = tf.nn.relu(h_conv1)
 
     '''layer2'''
-    tf.summary.histogram("/weights",W_conv1)
+    tf.summary.histogram("/weights_layer1",W_conv1)
     with tf.name_scope('layer2') as scope:
         W_conv2 = weight_variable([11,11,16,32],name='w_conv2')
         b_conv2 = bias_variable([32])
@@ -113,10 +113,10 @@ def model():
 #            grad_y_rmse = tf.sqrt(tf.reduce_mean(tf.div(tf.reduce_mean(tf.square(grady),[1,2]),tf.reduce_mean(tf.square(tempy),[1,2]))))
             grad_y_rmse = tf.reduce_mean(tf.reduce_mean(tf.div(tf.square(grady),tf.square(log10_y)),[1,2]))
 #            f_obj = 1 * rmse+0* (tf.sqrt(tf.square(grad_x_rmse) + tf.square(grad_y_rmse)))
-            f_obj = rmse + 0.5 *(grad_x_rmse + grad_y_rmse)
+            f_obj = rmse + 0 *(grad_x_rmse + grad_y_rmse)
         with tf.name_scope('db') as scope:
             #db = 20*tf.log(tf.add(tf.div(tf.abs(tempy-y_predict),tf.abs(tempy)),1e-10),10)
             db = 20*tf.div(tf.log(tf.add(tf.div(tf.abs(tf.pow(ten,log10_y)-tf.pow(ten,y_predict)),tf.abs(tf.pow(ten,log10_y))),1e-10)),tf.log(10.0))
             mean_db = tf.reduce_mean(db)
-    db_summary = tf.summary.histogram('db',db)
-    return y_predict,rmse,grad_x_rmse,grad_y_rmse,mean_db,f_obj
+    db_summary = tf.summary.histogram('db',mean_db)
+    return y_predict,rmse,grad_x_rmse,grad_y_rmse,mean_db,f_obj,l_d2
