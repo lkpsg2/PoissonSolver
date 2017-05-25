@@ -103,3 +103,15 @@ for i in range(epochs):
     summary_str = sess.run(merged_summary_op,feed_dict={tf_possion.x:x_test[0:batch],tf_possion.d:d_test[0:batch],tf_possion.y_actual:y_test[0:batch],tf_possion.keep_prob: 1.0})
     summary_writer.add_summary(summary_str,j)
     print ('epoch {0} done! train_loss:{1} test_loss:{2} grad_x:{3} f_obj:{4} db:{5} global_step:{6} learning rate:{7}'.format(i,train_loss, loss,gradx_result,fobj,meandb,global_step.eval(),learning_rate.eval()))
+
+for m in range(2,7,1):
+    print('m=',m)
+    #begin = datetime.datetime.now()
+    begin = time.clock()
+    for mm in range(1,m,1):
+        print('mm=',mm)
+        for j in range(0,test_size,batch):
+            y_print = y_predict.eval(feed_dict={tf_possion.x:x_test[j:batch],tf_possion.d:d_test[j:batch],tf_possion.y_actual:y_test[j:batch],tf_possion.keep_prob: 1.0})
+    #end  = datetime.datetime.now()
+    end = time.clock()
+    print(end -begin)
